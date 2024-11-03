@@ -29,6 +29,7 @@ export class AuthService {
         where: { user },
         select: { user: true, password: true, id: true },
       });
+
       if (!result)
         throw new UnauthorizedException('Credentials are not valid (user)');
       if (!bcrypt.compareSync(password, result.password))
@@ -43,6 +44,7 @@ export class AuthService {
   }
 
   private handleDBErrors(error: any) {
+    if (error instanceof UnauthorizedException) throw error;
     if (error.code == '23505') throw new BadRequestException(error.detail);
     console.log(error);
     throw new InternalServerErrorException('Please check server logs');
