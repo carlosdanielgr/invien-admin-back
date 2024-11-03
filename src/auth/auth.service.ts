@@ -9,15 +9,17 @@ import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
-import { User } from './entities/user.entity';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginUserDto } from './dto/login-user.dto';
+import { Session, User } from './entities';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Session)
+    private readonly sessionRepository: Repository<Session>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -34,13 +36,32 @@ export class AuthService {
         throw new UnauthorizedException('Credentials are not valid (user)');
       if (!bcrypt.compareSync(password, result.password))
         throw new UnauthorizedException('Credentials are not valid (password)');
+
+      const token = this.getJwtToken({ id: result.id });
+      await this.createSession(result.id, token);
       return {
         user,
-        token: this.getJwtToken({ id: result.id }),
+        token,
       };
     } catch (error) {
       this.handleDBErrors(error);
     }
+  }
+
+  async createSession(userId: string, token: string): Promise<Session> {
+    const session = this.sessionRepository.create({
+      userId,
+      token,
+      createdAt: new Date(),
+      expiresAt: this.calculateExpiryDate(),
+    });
+    return await this.sessionRepository.save(session);
+  }
+
+  private calculateExpiryDate(): Date {
+    const date = new Date();
+    date.setHours(date.getHours() + 24);
+    return date;
   }
 
   private handleDBErrors(error: any) {
