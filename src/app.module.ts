@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AuthModule } from './auth/auth.module';
+import { PropertyModule } from './property/property.module';
 
 const { env } = process;
 
@@ -19,6 +21,7 @@ const { env } = process;
       synchronize: true,
     }),
     AuthModule,
+    PropertyModule,
   ],
 })
 export class AppModule {}

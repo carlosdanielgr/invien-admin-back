@@ -48,6 +48,10 @@ export class AuthService {
     }
   }
 
+  async findSessionByToken(token: string): Promise<Session | null> {
+    return await this.sessionRepository.findOne({ where: { token } });
+  }
+
   async createSession(userId: string, token: string): Promise<Session> {
     const session = this.sessionRepository.create({
       userId,
